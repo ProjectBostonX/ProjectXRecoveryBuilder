@@ -1,8 +1,8 @@
-name: Universal Recovery Builder
+      name: Universal Recovery Builder
 
-on:
-  workflow_dispatch:
-    inputs:
+      on:
+      workflow_dispatch:
+      inputs:
       RECOVERY_TYPE:
         description: 'Recovery flavor to build'
         required: true
