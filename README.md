@@ -15,56 +15,36 @@ This repository is configured for a Team Win Recovery Project (TWRP) build using
 - Device name: `boston`
 - Makefile: `twrp_boston`
 - Build target: `recovery`
+- Builder branding: `Project X Boston • Created by luhhcarrl2x`
 
-## Brand and creator customization for Boston
+## Build branding
 
-To make your recovery image display `Project X Boston` and your creator name in the device/recovery metadata, add the branding values inside the Boston device tree before building.
+The GitHub Actions build logs now print this banner during the recovery build process:
 
-The most relevant file is the TWRP makefile in the Boston device tree:
-
-- `device/motorola/boston/twrp_boston.mk`
-
-Use values like this:
-
-```make
-PRODUCT_DEVICE := boston
-PRODUCT_NAME := ProjectXBoston
-PRODUCT_BRAND := ProjectX
-PRODUCT_MODEL := Project X Boston
-PRODUCT_MANUFACTURER := ProjectXGang
-PRODUCT_RELEASE_NAME := Project X Boston
+```text
+============================================================
+ Project X Boston Recovery Builder
+ Created by luhhcarrl2x
+ Device: boston | TWRP | Motorola Moto G Stylus 5G 2024
+============================================================
 ```
 
-Then copy the custom build metadata into the device tree’s `system.prop` or `BoardConfig.mk` for recovery UI display and build metadata:
-
-```make
-TW_DEVICE_VERSION := Project X Boston by Your Name
-```
-
-And optionally:
-
-```properties
-ro.product.model=Project X Boston
-ro.product.name=ProjectXBoston
-ro.vendor.product.model=Project X Boston
-```
-
-These values are what make the build show the project and creator details in the recovery environment, when TWRP is built from your Boston device tree.
+This makes the build logs clearly identify the recovery project and creator while the job is running.
 
 ## How to run the build
 
 1. Open the repository on GitHub.
 2. Go to the Actions tab.
-3. Select `Recovery Build`.
+3. Select `Project X Boston Recovery Builder`.
 4. Click `Run workflow`.
-5. Use the Boston defaults listed above.
-6. Wait for the build to finish and download the recovery image from the release output.
+5. Leave the Boston defaults as-is and start the workflow.
+6. Download the generated recovery image from the release output.
 
 ## Notes
 
-- The GitHub Actions workflow is only the builder.
-- The actual custom name you want shown on the device must be added to the Boston device tree before the recovery image is built.
-- The device tree, kernel, vendor configuration, and board files must match the real Boston hardware for a working build.
+- This repository is intentionally optimized for the Motorola Moto G Stylus 5G 2024 (`boston`).
+- The actual recovery UI branding also needs to be embedded in the Boston device tree before final packaging.
+- The build workflow is the recovery image generator. The final device-specific product branding lives in the TWRP device tree configuration.
 
 ---
 
