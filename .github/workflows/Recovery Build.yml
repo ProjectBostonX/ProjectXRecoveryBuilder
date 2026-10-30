@@ -155,56 +155,5 @@ jobs:
         run: |
           cd workspace
           if [ ! -d "${{ github.event.inputs.COMMON_PATH }}" ]; then
-            git clone "${{ github.event.inputs.COMMON_TREE_URL }}" -b "${{ github.event.inputs.DEVICE_TREE_BRANCH }}" "${{ github.event.inputs.COMMON_PATH }}"
-          fi
-
-      - name: Clone extra dependency repo
-        if: ${{ github.event.inputs.EXTRA_DEPS_URL != '' && github.event.inputs.EXTRA_DEPS_PATH != '' }}
-        run: |
-          cd workspace
-          if [ ! -d "${{ github.event.inputs.EXTRA_DEPS_PATH }}" ]; then
-            git clone "${{ github.event.inputs.EXTRA_DEPS_URL }}" "${{ github.event.inputs.EXTRA_DEPS_PATH }}"
-          fi
-
-      - name: Set swap space
-        uses: pierotofy/set-swap-space@master
-        with:
-          swap-size-gb: 12
-
-      - name: Run universal recovery build
-        env:
-          RECOVERY_TYPE: ${{ github.event.inputs.RECOVERY_TYPE }}
-          MANIFEST_URL: ${{ github.event.inputs.MANIFEST_URL }}
-          MANIFEST_BRANCH: ${{ github.event.inputs.MANIFEST_BRANCH }}
-          DEVICE_TREE_URL: ${{ github.event.inputs.DEVICE_TREE_URL }}
-          DEVICE_TREE_BRANCH: ${{ github.event.inputs.DEVICE_TREE_BRANCH }}
-          DEVICE_PATH: ${{ github.event.inputs.DEVICE_PATH }}
-          COMMON_TREE_URL: ${{ github.event.inputs.COMMON_TREE_URL }}
-          COMMON_PATH: ${{ github.event.inputs.COMMON_PATH }}
-          DEVICE_NAME: ${{ github.event.inputs.DEVICE_NAME }}
-          DEVICE_CODENAME: ${{ github.event.inputs.DEVICE_CODENAME }}
-          MAKEFILE_NAME: ${{ github.event.inputs.MAKEFILE_NAME }}
-          BUILD_TARGET: ${{ github.event.inputs.BUILD_TARGET }}
-          EXTRA_DEPS_URL: ${{ github.event.inputs.EXTRA_DEPS_URL }}
-          EXTRA_DEPS_PATH: ${{ github.event.inputs.EXTRA_DEPS_PATH }}
-        run: |
-          cd workspace
-          bash "${GITHUB_WORKSPACE}/scripts/build_universal_recovery.sh"
-
-      - name: Upload built artifacts to release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            workspace/out/target/product/${{ github.event.inputs.DEVICE_NAME }}/${{ github.event.inputs.BUILD_TARGET }}.img
-            workspace/out/target/product/${{ github.event.inputs.DEVICE_NAME }}/*.zip
-            workspace/out/target/product/${{ github.event.inputs.DEVICE_NAME }}/*vendor*.img
-            workspace/out/target/product/${{ github.event.inputs.DEVICE_NAME }}/*.img
-          name: ${{ github.event.inputs.DEVICE_NAME }}-${{ github.event.inputs.RECOVERY_TYPE }}-${{ github.run_id }}
-          tag_name: ${{ github.run_id }}
-          body: |
-            Recovery type: ${{ github.event.inputs.RECOVERY_TYPE }}
-            Manifest branch: ${{ github.event.inputs.MANIFEST_BRANCH }}
-            Device: ${{ github.event.inputs.DEVICE_NAME }}
-            Target: ${{ github.event.inputs.BUILD_TARGET }}.img
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            git clone "${{ github.event.inputs.COMMON_TREE_URL }}" -b "${{ github.event.inputs](#)
+
