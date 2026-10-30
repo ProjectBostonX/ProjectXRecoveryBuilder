@@ -1,159 +1,49 @@
-      name: Universal Recovery Builder
+#!/bin/bash
+set -euo pipefail
 
-      on:
-      workflow_dispatch:
-      inputs:
-      RECOVERY_TYPE:
-        description: 'Recovery flavor to build'
-        required: true
-        default: 'twrp'
-        type: choice
-        options:
-          - twrp
-          - aosp
-          - shrp
-          - orangefox
-          - omni
-      MANIFEST_URL:
-        description: 'Manifest URL'
-        required: true
-        default: 'https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp.git'
-      MANIFEST_BRANCH:
-        description: 'Manifest branch'
-        required: true
-        default: 'twrp-12.1'
-      DEVICE_TREE_URL:
-        description: 'Device tree repo URL'
-        required: true
-        default: 'https://github.com/ProjectBostonX/android_device_motorola_boston.git'
-      DEVICE_TREE_BRANCH:
-        description: 'Device tree branch'
-        required: true
-        default: 'project-x-boston-branding'
-      DEVICE_PATH:
-        description: 'Device path inside source tree'
-        required: true
-        default: 'device/motorola/boston'
-      COMMON_TREE_URL:
-        description: 'Common tree URL (optional)'
-        required: false
-        default: ''
-      COMMON_PATH:
-        description: 'Common tree path (optional)'
-        required: false
-        default: ''
-      DEVICE_NAME:
-        description: 'Device name/output folder name'
-        required: true
-        default: 'boston'
-      DEVICE_CODENAME:
-        description: 'Device codename'
-        required: true
-        default: 'boston'
-      MAKEFILE_NAME:
-        description: 'Recovery makefile name'
-        required: true
-        default: 'twrp_boston'
-      BUILD_TARGET:
-        description: 'Build target'
-        required: true
-        default: 'recovery'
-      EXTRA_DEPS_URL:
-        description: 'Extra dependency repo URL (optional)'
-        required: false
-        default: ''
-      EXTRA_DEPS_PATH:
-        description: 'Extra dependency path (optional)'
-        required: false
-        default: ''
+echo "============================================================"
+echo " Project X Boston Recovery Builder"
+echo " Created by luhhcarrl2x"
+echo " Device: ${DEVICE_NAME:-boston} | ${RECOVERY_TYPE:-twrp} | Motorola Moto G Stylus 5G 2024"
+echo "============================================================"
 
-jobs:
-  build:
-    if: github.event.repository.owner.id == github.event.sender.id
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: write
-    steps:
-      - name: Display build parameters
-        run: |
-          echo "Recovery type: ${{ github.event.inputs.RECOVERY_TYPE }}"
-          echo "Manifest: ${{ github.event.inputs.MANIFEST_URL }} @ ${{ github.event.inputs.MANIFEST_BRANCH }}"
-          echo "Device Tree: ${{ github.event.inputs.DEVICE_TREE_URL }} @ ${{ github.event.inputs.DEVICE_TREE_BRANCH }}"
-          echo "Device path: ${{ github.event.inputs.DEVICE_PATH }}"
-          echo "Device name: ${{ github.event.inputs.DEVICE_NAME }}"
-          echo "Makefile: ${{ github.event.inputs.MAKEFILE_NAME }}"
-          echo "Target: ${{ github.event.inputs.BUILD_TARGET }}"
+default_workspace="${GITHUB_WORKSPACE:-$PWD}"
+if [ -d "${default_workspace}/workspace" ]; then
+  cd "${default_workspace}/workspace"
+else
+  echo "Workspace directory not found at ${default_workspace}/workspace"
+  exit 1
+fi
 
-      - name: Check out repo
-        uses: actions/checkout@v4
+if [ -f build/envsetup.sh ]; then
+  source build/envsetup.sh
+else
+  echo "Android build environment not initialized in workspace. Check repo sync and manifest configuration."
+  exit 1
+fi
 
-      - name: Free disk space
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: true
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          swap-storage: true
+export ALLOW_MISSING_DEPENDENCIES=true
+export LC_ALL=C
+export TARGET_PRODUCT="${MAKEFILE_NAME:-twrp_boston}"
 
-      - name: Prepare environment
-        run: |
-          sudo apt-get update
-          DEBIAN_FRONTEND=noninteractive sudo apt-get install -yq \
-            gperf gcc-multilib gcc-10-multilib g++-multilib g++-10-multilib \
-            libc6-dev lib32ncurses-dev x11proto-core-dev libx11-dev tree lib32z-dev \
-            libgl1-mesa-dev libxml2-utils xsltproc bc ccache lib32readline-dev \
-            lib32z1-dev liblz4-tool libncurses-dev libsdl1.2-dev build-essential \
-            libgtk-3-dev libglu1-mesa-dev freeglut3-dev git libxml2 lzop pngcrush \
-            schedtool squashfs-tools imagemagick libbz2-dev lzma ncftp qemu-user-static \
-            libstdc++-10-dev libncurses6 python3 tar zip unzip wget curl
+DEVICE_NAME="${DEVICE_NAME:-boston}"
+MAKEFILE_NAME="${MAKEFILE_NAME:-twrp_boston}"
+BUILD_TARGET="${BUILD_TARGET:-recovery}"
 
-      - name: Install OpenJDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: '17'
+if [ -n "${MAKEFILE_NAME}" ]; then
+  echo "Attempting lunch target: ${MAKEFILE_NAME}-eng"
+  lunch "${MAKEFILE_NAME}"-eng || lunch "${MAKEFILE_NAME}"-userdebug || lunch "${MAKEFILE_NAME}"-user
+fi
 
-      - name: Setup SSH keys
-        if: ${{ startsWith(github.event.inputs.MANIFEST_URL, 'git@github.com') || startsWith(github.event.inputs.DEVICE_TREE_URL, 'git@github.com') || startsWith(github.event.inputs.COMMON_TREE_URL, 'git@github.com') || startsWith(github.event.inputs.EXTRA_DEPS_URL, 'git@github.com') }}
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: |
-            ${{ secrets.SSH_PRIVATE_KEY }}
+make clean
+make "${BUILD_TARGET}image" -j"$(nproc --all)"
 
-      - name: Install repo tool
-        run: |
-          mkdir -p ~/bin
-          curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
-          chmod a+x ~/bin/repo
-          sudo ln -sf ~/bin/repo /usr/bin/repo
-
-      - name: Initialize workspace
-        run: |
-          mkdir -p workspace
-          cd workspace
-          git config --global user.name "ProjectXGang"
-          git config --global user.email "projectxgang@users.noreply.github.com"
-          repo init --depth=1 -u "${{ github.event.inputs.MANIFEST_URL }}" -b "${{ github.event.inputs.MANIFEST_BRANCH }}"
-        id: workspace
-
-      - name: Repo sync
-        run: |
-          cd workspace
-          repo sync -j$(nproc --all) --force-sync
-
-      - name: Clone device tree
-        run: |
-          cd workspace
-          if [ ! -d "${{ github.event.inputs.DEVICE_PATH }}" ]; then
-            git clone "${{ github.event.inputs.DEVICE_TREE_URL }}" -b "${{ github.event.inputs.DEVICE_TREE_BRANCH }}" "${{ github.event.inputs.DEVICE_PATH }}"
-          fi
-
-      - name: Clone common tree
-        if: ${{ github.event.inputs.COMMON_TREE_URL != '' && github.event.inputs.COMMON_PATH != '' }}
-        run: |
-          cd workspace
-          if [ ! -d "${{ github.event.inputs.COMMON_PATH }}" ]; then
-            git clone "${{ github.event.inputs.COMMON_TREE_URL }}" -b "${{ github.event.inputs](#)
-
+OUTPUT_DIR="out/target/product/${DEVICE_NAME}"
+if [ -d "${OUTPUT_DIR}" ]; then
+  echo "Built artifacts in ${OUTPUT_DIR}:"
+  ls -lh "${OUTPUT_DIR}"
+else
+  echo "No build output found under ${OUTPUT_DIR}"
+  find out -maxdepth 4 -type f | head -n 25 || true
+  exit 1
+fi
