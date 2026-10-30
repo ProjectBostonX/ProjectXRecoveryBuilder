@@ -183,7 +183,7 @@ jobs:
 
       - name: Build recovery image
         run: |
-          set -euo pipefail
+          set -eo pipefail
           export ALLOW_MISSING_DEPENDENCIES=true
           export LC_ALL=C
           cd workspace
